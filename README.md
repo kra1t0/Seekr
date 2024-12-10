@@ -28,7 +28,7 @@ To run use the python interpreter or just run casually as a script
 python3 Seekr <keyword>
 ```
 
-Example Usage
+## Example Usage
 
 3.1 Search for the keyword password:
 ```
@@ -43,7 +43,7 @@ Match found in /path/to/another_file.txt on line 5: Change your password regular
 ```
 
 
-3.1 Search for a phrase:
+3.2 Search for a phrase:
 
 ```
 python3 Seekr "error code"

@@ -27,6 +27,10 @@ To run use the python interpreter or just run casually as a script
 ./Seekr <keyword>
 python3 Seekr <keyword>
 ```
+(Don't forget to give permission to execute.)
+```bash
+chmod +x Seekr
+```
 
 ## Example Usage
 

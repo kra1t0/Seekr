@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+import os
+import argparse
+from colorama import Fore, Style, init
+from datetime import datetime
+import shutil
+
+# Initialize colorama for cross-platform support
+init(autoreset=True)
+
+# Function to write to the report file (UTF-8 encoding)
+def write_to_report(report_file, content):
+    with open(report_file, 'a', encoding='utf-8') as report:
+        report.write(content + '\n')
+
+# Function to search for a keyword in a file, case-insensitive (UTF-8 only)
+def search_in_file(file_path, keyword, report_file):
+    try:
+        # Open the file in UTF-8 encoding
+        with open(file_path, 'r', encoding='utf-8', errors='strict') as file:
+            for line_num, line in enumerate(file, start=1):
+                if keyword.lower() in line.lower():
+                    # Highlighting the keyword in the line
+                    highlighted_line = line.replace(
+                        keyword, f"{Fore.YELLOW}{keyword}{Style.RESET_ALL}"
+                    )
+                    # Print the match details: file, line number, and line content
+                    print(f"{Fore.GREEN}Match found in {file_path}{Style.RESET_ALL} "
+                          f"on line {Fore.CYAN}{line_num}{Style.RESET_ALL}: {highlighted_line.strip()}")
+                    
+                    # Write to the report file (in UTF-8)
+                    report_content = f"Match found in {file_path} on line {line_num}: {line.strip()}"
+                    write_to_report(report_file, report_content)
+
+    except UnicodeDecodeError:
+        # Ignore files that are not UTF-8 encoded
+        print(f"{Fore.RED}Skipping non-UTF-8 file: {file_path}{Style.RESET_ALL}")
+    except Exception as e:
+        print(f"Error reading {file_path}: {e}")
+
+# Function to recursively search through files in a directory and subdirectories (UTF-8 only)
+def search_in_directory(directory, keyword, report_file, exclude_dir):
+    # Walk through the directory and its subdirectories
+    for root, dirs, files in os.walk(directory):
+        # Skip the report directory
+        if exclude_dir in root:
+            continue
+
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+
+            # Highlighting the file path
+            print(f"{Fore.BLUE}Reading file: {file_path}{Style.RESET_ALL}")
+            
+            # Search in each file for the keyword (UTF-8 only)
+            search_in_file(file_path, keyword, report_file)
+
+# Function to move the report and delete the report directory
+def move_report_and_cleanup(report_file, report_directory):
+    # Move the report file to the parent directory
+    parent_directory = os.path.dirname(report_directory)
+    new_report_path = os.path.join(parent_directory, os.path.basename(report_file))
+    
+    try:
+        shutil.move(report_file, new_report_path)
+        print(f"{Fore.GREEN}Report file moved to: {new_report_path}{Style.RESET_ALL}")
+    except Exception as e:
+        print(f"Error moving the report file: {e}")
+    
+    # Remove the report directory
+    try:
+        shutil.rmtree(report_directory)
+        print(f"{Fore.GREEN}Report directory '{report_directory}' deleted.{Style.RESET_ALL}")
+    except Exception as e:
+        print(f"Error deleting report directory: {e}")
+
+# Main script function
+if __name__ == "__main__":
+    # Using argparse for command-line argument handling
+    parser = argparse.ArgumentParser(description="Search for a keyword in all UTF-8 files in a directory and subdirectories.")
+    parser.add_argument('keyword', type=str, help="The keyword or sentence to search for (case-insensitive).")
+    
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Directory to search (current directory)
+    directory_to_search = os.getcwd()  # Gets current working directory
+
+    # Keyword to search for
+    keyword = args.keyword
+
+    # Create a report directory (keysearch-reports)
+    report_directory = os.path.join(directory_to_search, 'keysearch-reports')
+    os.makedirs(report_directory, exist_ok=True)
+
+    # Report file path
+    report_file = os.path.join(report_directory, f"report-{keyword}.txt")
+
+    # Write the initial search details to the report file (UTF-8)
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    search_details = f"{current_time} {directory_to_search} searched for '{keyword}' ############"
+    write_to_report(report_file, search_details)
+
+    # Start searching through the directory, excluding the 'keysearch-reports' folder (UTF-8 only)
+    search_in_directory(directory_to_search, keyword, report_file, report_directory)
+
+    # Move the report and delete the keysearch-reports directory
+    move_report_and_cleanup(report_file, report_directory)
+
+    print(f"\n{Fore.GREEN}Search complete! Results saved and directory cleaned up.{Style.RESET_ALL}")
